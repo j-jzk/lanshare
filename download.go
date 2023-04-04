@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 )
 
 func HandleDownload(w http.ResponseWriter, r *http.Request) {
@@ -84,6 +85,10 @@ type templateListEntry struct {
 }
 
 func writeDirectoryListing(w http.ResponseWriter, path string) {
+	if !strings.HasSuffix(path, "/") {
+		path += "/"
+	}
+
 	dirEntries, err := os.ReadDir(path)
 	if handleFileError(err, w) {
 		return
@@ -94,15 +99,17 @@ func writeDirectoryListing(w http.ResponseWriter, path string) {
 	for i, f := range dirEntries {
 		stat, _ := f.Info()
 
-		var sizeInfo string
+		var sizeInfo, name string
 		if stat.IsDir() {
 			sizeInfo = "DIR"
+			name = stat.Name() + "/"
 		} else {
 			sizeInfo = strconv.FormatInt(stat.Size(), 10)
+			name = stat.Name()
 		}
 
 		//templEntries = append(templEntries, templateListEntry{Name: stat.Name(), SizeInfo: sizeInfo})
-		templEntries[i+1] = templateListEntry{Name: stat.Name(), SizeInfo: sizeInfo}
+		templEntries[i+1] = templateListEntry{Name: name, SizeInfo: sizeInfo}
 	}
 
 	templ := template.Must(template.New("").Parse(dirListingTemplate))
