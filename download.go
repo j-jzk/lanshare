@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
+	"github.com/dustin/go-humanize"
 )
 
 func HandleDownload(w http.ResponseWriter, r *http.Request) {
@@ -104,7 +104,7 @@ func writeDirectoryListing(w http.ResponseWriter, path string) {
 			sizeInfo = "DIR"
 			name = stat.Name() + "/"
 		} else {
-			sizeInfo = strconv.FormatInt(stat.Size(), 10)
+			sizeInfo = humanize.Bytes(uint64(stat.Size()))
 			name = stat.Name()
 		}
 
