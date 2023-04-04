@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"io/fs"
 	"errors"
-	"path"
-	"net/http"
-	"strconv"
+	"fmt"
 	"html/template"
+	"io/fs"
+	"net/http"
+	"os"
+	"path"
+	"strconv"
 )
 
 func HandleDownload(w http.ResponseWriter, r *http.Request) {
@@ -50,6 +50,11 @@ const dirListingTemplate = `
 	</style>
 </head><body>
 	<h1><code>{{.Cwd}}</code></h1>
+	<form method="POST" enctype="multipart/form-data" action="/__lanshare_upload">
+		<input type="file" name="file" />
+		<input type="hidden" name="dir" value="{{.Cwd}}" />
+		<button type="submit">Upload</button>
+	</form>
 	<table>
 		<thead>
 			<tr><th>name</th><th>size</th></tr>
@@ -70,11 +75,11 @@ const dirListingTemplate = `
 `
 
 type listingTemplateParams struct {
-	Cwd string
+	Cwd     string
 	Entries []templateListEntry
 }
 type templateListEntry struct {
-	Name string
+	Name     string
 	SizeInfo string
 }
 
