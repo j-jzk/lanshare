@@ -1,13 +1,16 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 )
 
 func main() {
-	//http.ListenAndServe("0.0.0.0:8080", http.FileServer(http.Dir(".")))
 	http.HandleFunc("/", HandleDownload)
 	http.HandleFunc("/__lanshare_upload", HandleUpload) // TODO: differentiate using HTTP methods instead of a special URL
-	http.ListenAndServe("0.0.0.0:8080", nil)
+
+	err := http.ListenAndServe("0.0.0.0:8080", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
