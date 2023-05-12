@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -21,20 +22,22 @@ func (dh *DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// open the requested file
 	fsPath := path.Join(".", r.URL.Path)
 	f, err := os.Open(fsPath)
-	if handleFileError(err, w) {
+	if handleFileError(err, w, fsPath) {
 		return
 	}
 	defer f.Close()
 
 	// check if the file is a dir
 	stat, err := f.Stat()
-	if handleFileError(err, w) {
+	if handleFileError(err, w, fsPath) {
 		return
 	}
 
 	if stat.IsDir() {
+		log.Printf("GET %s - directory listing\n", fsPath)
 		writeDirectoryListing(w, fsPath, dh.allowUploads)
 	} else {
+		log.Printf("GET %s - file\n", fsPath)
 		defaultFileServer := http.FileServer(http.Dir("."))
 		defaultFileServer.ServeHTTP(w, r)
 	}
@@ -77,7 +80,7 @@ const dirListingTemplate = `
 		</tbody>
 	</table>
 	<footer>
-		LANShare
+		LANShare {{.ServerVersion}} by <a href="https://j-jzk.cz">j-jzk</a>.
 	</footer>
 </body></html>
 `
@@ -86,6 +89,7 @@ type listingTemplateParams struct {
 	Cwd     string
 	AllowUploads bool
 	Entries []templateListEntry
+	ServerVersion string
 }
 type templateListEntry struct {
 	Name     string
@@ -98,7 +102,7 @@ func writeDirectoryListing(w http.ResponseWriter, path string, allowUploads bool
 	}
 
 	dirEntries, err := os.ReadDir(path)
-	if handleFileError(err, w) {
+	if handleFileError(err, w, path) {
 		return
 	}
 
@@ -121,20 +125,22 @@ func writeDirectoryListing(w http.ResponseWriter, path string, allowUploads bool
 	}
 
 	templ := template.Must(template.New("").Parse(dirListingTemplate))
-	templ.Execute(w, listingTemplateParams{Cwd: path, Entries: templEntries, AllowUploads: allowUploads})
+	templ.Execute(w, listingTemplateParams{Cwd: path, Entries: templEntries, AllowUploads: allowUploads, ServerVersion: VERSION})
 }
 
 // UTIL
-func handleFileError(err error, w http.ResponseWriter) bool {
+func handleFileError(err error, w http.ResponseWriter, path string) bool {
 	if err == nil {
 		return false
 	} else {
 		if errors.Is(err, fs.ErrNotExist) {
 			w.WriteHeader(404)
 			fmt.Fprintf(w, "404 not found\n")
+			log.Printf("GET %s - 404\n", path)
 		} else {
 			w.WriteHeader(500)
 			fmt.Fprintf(w, "Unexpected error: %s\n", err)
+			log.Printf("GET %s - ERROR: %s\n", path, err)
 		}
 
 		return true
