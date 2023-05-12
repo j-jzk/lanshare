@@ -12,7 +12,12 @@ import (
 	"github.com/dustin/go-humanize"
 )
 
-func HandleDownload(w http.ResponseWriter, r *http.Request) {
+type DownloadHandler struct {
+	// shouldn't this be AllowUploads
+	allowUploads bool
+}
+
+func (dh *DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// open the requested file
 	fsPath := path.Join(".", r.URL.Path)
 	f, err := os.Open(fsPath)
@@ -28,7 +33,7 @@ func HandleDownload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if stat.IsDir() {
-		writeDirectoryListing(w, fsPath)
+		writeDirectoryListing(w, fsPath, dh.allowUploads)
 	} else {
 		defaultFileServer := http.FileServer(http.Dir("."))
 		defaultFileServer.ServeHTTP(w, r)
@@ -51,11 +56,13 @@ const dirListingTemplate = `
 	</style>
 </head><body>
 	<h1><code>{{.Cwd}}</code></h1>
-	<form method="POST" enctype="multipart/form-data" action="/__lanshare_upload">
-		<input type="file" name="file" />
-		<input type="hidden" name="dir" value="{{.Cwd}}" />
-		<button type="submit">Upload</button>
-	</form>
+	{{if .AllowUploads}}
+		<form method="POST" enctype="multipart/form-data" action="/__lanshare_upload">
+			<input type="file" name="file" />
+			<input type="hidden" name="dir" value="{{.Cwd}}" />
+			<button type="submit">Upload</button>
+		</form>
+	{{end}}
 	<table>
 		<thead>
 			<tr><th>name</th><th>size</th></tr>
@@ -77,6 +84,7 @@ const dirListingTemplate = `
 
 type listingTemplateParams struct {
 	Cwd     string
+	AllowUploads bool
 	Entries []templateListEntry
 }
 type templateListEntry struct {
@@ -84,7 +92,7 @@ type templateListEntry struct {
 	SizeInfo string
 }
 
-func writeDirectoryListing(w http.ResponseWriter, path string) {
+func writeDirectoryListing(w http.ResponseWriter, path string, allowUploads bool) {
 	if !strings.HasSuffix(path, "/") {
 		path += "/"
 	}
@@ -113,7 +121,7 @@ func writeDirectoryListing(w http.ResponseWriter, path string) {
 	}
 
 	templ := template.Must(template.New("").Parse(dirListingTemplate))
-	templ.Execute(w, listingTemplateParams{Cwd: path, Entries: templEntries})
+	templ.Execute(w, listingTemplateParams{Cwd: path, Entries: templEntries, AllowUploads: allowUploads})
 }
 
 // UTIL
