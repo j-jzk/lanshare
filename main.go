@@ -17,6 +17,7 @@ func main() {
 	help := false
 	flag.BoolVar(&help, "help", false, "display help")
 	flag.BoolVar(&help, "h", false, "display help")
+	port := flag.Int("p", 8080, "the port to listen on")
 
 	flag.Parse()
 
@@ -24,18 +25,18 @@ func main() {
 		fmt.Println("lanshare -u | [-h|-help]")
 		flag.PrintDefaults()
 	} else {
-		runServer(*allowUploads)
+		runServer(*allowUploads, *port)
 	}
 }
 
-func runServer(allowUploads bool) {
+func runServer(allowUploads bool, port int) {
 	http.Handle("/", &DownloadHandler{allowUploads: allowUploads})
 	if allowUploads {
 		http.HandleFunc("/__lanshare_upload", HandleUpload) // TODO: differentiate using HTTP methods instead of a special URL
 	}
 
-	fmt.Println("Listening on port 8080.\n")
-	err := http.ListenAndServe("0.0.0.0:8080", nil)
+	fmt.Printf("Listening on port %d.\n", port)
+	err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
