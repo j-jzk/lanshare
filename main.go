@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"net"
 )
 
 const VERSION = "0.1"
@@ -22,7 +23,7 @@ func main() {
 	flag.Parse()
 
 	if help {
-		fmt.Println("lanshare -u | [-h|-help]")
+		fmt.Println("lanshare [-u] [-p <port>] | [-h|-help]")
 		flag.PrintDefaults()
 	} else {
 		runServer(*allowUploads, *port)
@@ -36,8 +37,38 @@ func runServer(allowUploads bool, port int) {
 	}
 
 	fmt.Printf("Listening on port %d.\n", port)
+	printAddresses(port)
+
 	err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func printAddresses(port int) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return
+	}
+
+	fmt.Println("Open the UI at one of these URLs:")
+	for _, addr := range addrs {
+		ipAddr, ok := addr.(*net.IPNet)
+		if ok {
+			var ipStr string
+			if ipAddr.IP.To4() != nil {
+				ipStr = ipAddr.IP.String()
+			} else {
+				ipStr = fmt.Sprintf("[%s]", ipAddr.IP.String())
+			}
+
+			fmt.Printf(" - http://%s:%d", ipStr, port)
+			if ipAddr.IP.IsLoopback() {
+				fmt.Printf(" (loopback)\n")
+			} else {
+				fmt.Printf("\n")
+			}
+		}
+	}
+	fmt.Println("")
 }
