@@ -12,24 +12,30 @@ import (
 
 func HandleUpload(w http.ResponseWriter, r *http.Request) {
 	dir := safeDir(r.FormValue("dir"))
-	infile, header, err := r.FormFile("file")
-	if handleError(err, w, "") {
-		return
+
+	log.Printf("UPLOAD - files:\n")
+	r.ParseMultipartForm(32 << 10) // max memory of 32 MB
+	for _, header := range r.MultipartForm.File["file"] {
+		infile, err := header.Open()
+		if handleError(err, w, "") {
+			return
+		}
+
+		// TODO: rename the file if it already exists?
+		localPath := path.Join(".", dir, header.Filename)
+		outfile, err := os.Create(localPath)
+		if handleError(err, w, localPath) {
+			return
+		}
+
+		_, err = io.Copy(outfile, infile)
+		if handleError(err, w, localPath) {
+			return
+		}
+
+		log.Printf("\t%s - success\n", localPath)
 	}
 
-	// TODO: rename the file if it already exists?
-	localPath := path.Join(".", dir, header.Filename)
-	outfile, err := os.Create(localPath)
-	if handleError(err, w, localPath) {
-		return
-	}
-
-	_, err = io.Copy(outfile, infile)
-	if handleError(err, w, localPath) {
-		return
-	}
-
-	log.Printf("UPLOAD %s - success\n", localPath)
 	w.Header().Add("Location", "/"+dir)
 	w.WriteHeader(303)
 }

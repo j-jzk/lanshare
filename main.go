@@ -1,13 +1,13 @@
 package main
 
 import (
-	"log"
 	"flag"
 	"fmt"
-	"net/http"
+	"log"
 	"net"
 	"github.com/mdp/qrterminal/v3"
 	"os"
+	"net/http"
 )
 
 const VERSION = "1.0"

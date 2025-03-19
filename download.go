@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/dustin/go-humanize"
 	"html/template"
 	"io/fs"
 	"log"
@@ -10,7 +11,6 @@ import (
 	"os"
 	"path"
 	"strings"
-	"github.com/dustin/go-humanize"
 )
 
 type DownloadHandler struct {
@@ -61,7 +61,7 @@ const dirListingTemplate = `
 	<h1><code>{{.Cwd}}</code></h1>
 	{{if .AllowUploads}}
 		<form method="POST" enctype="multipart/form-data" action="/__lanshare_upload">
-			<input type="file" name="file" />
+			<input type="file" name="file" multiple />
 			<input type="hidden" name="dir" value="{{.Cwd}}" />
 			<button type="submit">Upload</button>
 		</form>
@@ -86,9 +86,9 @@ const dirListingTemplate = `
 `
 
 type listingTemplateParams struct {
-	Cwd     string
-	AllowUploads bool
-	Entries []templateListEntry
+	Cwd           string
+	AllowUploads  bool
+	Entries       []templateListEntry
 	ServerVersion string
 }
 type templateListEntry struct {
