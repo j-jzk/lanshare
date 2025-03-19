@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net"
+	"github.com/mdp/qrterminal/v3"
+	"os"
 )
 
 const VERSION = "1.0"
@@ -52,6 +54,7 @@ func printAddresses(port int) {
 	}
 
 	fmt.Println("Open the UI at one of these URLs:")
+	var firstViableUrl string
 	for _, addr := range addrs {
 		ipAddr, ok := addr.(*net.IPNet)
 		if ok {
@@ -66,9 +69,19 @@ func printAddresses(port int) {
 			if ipAddr.IP.IsLoopback() {
 				fmt.Printf(" (loopback)\n")
 			} else {
+				// if this is the first non-loopback IP, we will use it for the QR code
+				if firstViableUrl == "" {
+					firstViableUrl = fmt.Sprintf("http://%s:%d", ipStr, port)
+				}
 				fmt.Printf("\n")
 			}
 		}
 	}
 	fmt.Println("")
+
+	if firstViableUrl != "" {
+		qrterminal.GenerateHalfBlock(firstViableUrl, qrterminal.L, os.Stdout)		
+		fmt.Printf("QR code for: %s\n", firstViableUrl)
+		fmt.Println("")
+	}
 }
