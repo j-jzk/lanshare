@@ -11,7 +11,8 @@ import (
 )
 
 func HandleUpload(w http.ResponseWriter, r *http.Request) {
-	dir := safeDir(r.FormValue("dir"))
+	// dir := safeDir(r.FormValue("dir"))
+	dir := safeDir(r.URL.Path)
 
 	log.Printf("UPLOAD - files:\n")
 	r.ParseMultipartForm(32 << 10) // max memory of 32 MB

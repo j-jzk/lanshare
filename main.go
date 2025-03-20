@@ -3,11 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/mdp/qrterminal/v3"
 	"log"
 	"net"
-	"github.com/mdp/qrterminal/v3"
-	"os"
 	"net/http"
+	"os"
 )
 
 const VERSION = "1.0"
@@ -33,10 +33,15 @@ func main() {
 }
 
 func runServer(allowUploads bool, port int) {
-	http.Handle("/", &DownloadHandler{allowUploads: allowUploads})
-	if allowUploads {
-		http.HandleFunc("/__lanshare_upload", HandleUpload) // TODO: differentiate using HTTP methods instead of a special URL
-	}
+	// we can use Handle("GET /") and HandleFunc("POST /") when we upgrade to a newer version of Go
+	downloadHandler := DownloadHandler{allowUploads: allowUploads}
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" && allowUploads {
+			HandleUpload(w, r)
+		} else {
+			downloadHandler.ServeHTTP(w, r)
+		}
+	})
 
 	fmt.Printf("Listening on port %d.\n", port)
 	printAddresses(port)
@@ -80,7 +85,7 @@ func printAddresses(port int) {
 	fmt.Println("")
 
 	if firstViableUrl != "" {
-		qrterminal.GenerateHalfBlock(firstViableUrl, qrterminal.L, os.Stdout)		
+		qrterminal.GenerateHalfBlock(firstViableUrl, qrterminal.L, os.Stdout)
 		fmt.Printf("QR code for: %s\n", firstViableUrl)
 		fmt.Println("")
 	}

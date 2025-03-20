@@ -60,9 +60,8 @@ const dirListingTemplate = `
 </head><body>
 	<h1><code>{{.Cwd}}</code></h1>
 	{{if .AllowUploads}}
-		<form method="POST" enctype="multipart/form-data" action="/__lanshare_upload">
+		<form method="POST" enctype="multipart/form-data">
 			<input type="file" name="file" multiple />
-			<input type="hidden" name="dir" value="{{.Cwd}}" />
 			<button type="submit">Upload</button>
 		</form>
 	{{end}}
