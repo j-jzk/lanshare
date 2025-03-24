@@ -20,19 +20,25 @@ func main() {
 	help := false
 	flag.BoolVar(&help, "help", false, "display help")
 	flag.BoolVar(&help, "h", false, "display help")
+	host := flag.String("host", "0.0.0.0", "the host to listen on")
 	port := flag.Int("p", 8080, "the port to listen on")
 
 	flag.Parse()
 
+	// validate host parameter
+	if net.ParseIP(*host) == nil {
+		log.Fatalln("Invalid host ip address")
+	}
+
 	if help {
-		fmt.Println("lanshare [-u] [-p <port>] | [-h|-help]")
+		fmt.Println("lanshare [-u] [-host <host>] [-p <port>] | [-h|-help]")
 		flag.PrintDefaults()
 	} else {
-		runServer(*allowUploads, *port)
+		runServer(*allowUploads, *host, *port)
 	}
 }
 
-func runServer(allowUploads bool, port int) {
+func runServer(allowUploads bool, host string, port int) {
 	// we can use Handle("GET /") and HandleFunc("POST /") when we upgrade to a newer version of Go
 	downloadHandler := DownloadHandler{allowUploads: allowUploads}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -44,18 +50,30 @@ func runServer(allowUploads bool, port int) {
 	})
 
 	fmt.Printf("Listening on port %d.\n", port)
-	printAddresses(port)
+	printAddresses(host, port)
 
-	err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil)
+	err := http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func printAddresses(port int) {
+func printAddresses(host string, port int) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return
+	}
+
+	// there is a check if using a custom host
+	// this replaces array addrs with a single IP network with mask /32 (IPv4) and /128 (IPv6)
+	if host != "0.0.0.0" {
+		ip := net.ParseIP(host)
+
+		if ip == nil {
+			log.Fatalf("Invalid host ip address: %s\n", host)
+		}
+
+		addrs = []net.Addr{&net.IPNet{IP: ip, Mask: net.CIDRMask(32, 32)}}
 	}
 
 	fmt.Println("Open the UI at one of these URLs:")
