@@ -9,9 +9,10 @@ Running `lanshare -u` and opening `localhost:8080` gives the following result:
 
 ## Usage
 ```
-lanshare [-u] [-p <port>] | [-h|-help]
-  -h|-help   display help
-  -p <port>  the port to listen on (default 8080)
-  -u	     whether to allow uploads (default false)
+lanshare [-u] [-host <ip>] [-p <port>] | [-h|-help]
+  -h|-help	  display help
+  -host <ip>  the host to listen on (IP address) (default "0.0.0.0")
+  -p <port>   the port to listen on (default 8080)
+  -u        	whether to allow uploads (default false)
 ```
 
