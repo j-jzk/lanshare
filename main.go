@@ -11,7 +11,7 @@ import (
 	"github.com/mdp/qrterminal/v3"
 )
 
-const VERSION = "1.0"
+const VERSION = "1.1"
 
 func main() {
 	fmt.Printf("LANShare %s by j-jzk. Free software under the BSD license.\n", VERSION)
